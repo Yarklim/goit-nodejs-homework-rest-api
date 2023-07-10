@@ -1,12 +1,10 @@
 const express = require('express');
-
+const ctrl = require('../../controllers/contacts');
+const { validateBody, isValidId, authenticate } = require('../../middlewares');
+const { schemas } = require('../../models/contact');
 const router = express.Router();
 
-const ctrl = require('../../controllers/contacts');
-
-const { validateBody, isValidId } = require('../../middlewares');
-
-const { schemas } = require('../../models/contact');
+router.use(authenticate);
 
 router.get('/', ctrl.getContacts);
 
@@ -27,6 +25,7 @@ router.put(
 
 router.patch(
   '/:id/favorite',
+  isValidId,
   validateBody(schemas.updateFavoriteSchema, `missing field favorite`),
   ctrl.updateFavorite
 );

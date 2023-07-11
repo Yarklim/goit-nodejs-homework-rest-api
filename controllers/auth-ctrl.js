@@ -2,8 +2,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 const { User } = require('../models/user');
-const { HttpError } = require('../helpers');
-const { ctrlWrapper } = require('../helpers');
+const { HttpError, ctrlWrapper } = require('../helpers');
 const { SECRET_KEY } = process.env;
 
 const register = async (req, res) => {
@@ -11,14 +10,14 @@ const register = async (req, res) => {
   const user = await User.findOne({ email });
 
   if (user) {
-    throw HttpError(409, 'Email already in use');
+    throw HttpError(409, 'Email in use');
   }
   const hashPassword = await bcrypt.hash(password, 10);
 
   const result = await User.create({ ...req.body, password: hashPassword });
 
   res.status(201).json({
-    name: result.name,
+    email: result.email,
     subscription: result.subscription,
   });
 };
@@ -28,13 +27,13 @@ const login = async (req, res) => {
   const user = await User.findOne({ email });
 
   if (!user) {
-    throw new HttpError(401, 'Email or password is wrong');
+    throw HttpError(401, 'Email or password is wrong');
   }
 
   const passwordCompare = await bcrypt.compare(password, user.password);
 
   if (!passwordCompare) {
-    throw new HttpError(401, 'Invalid password');
+    throw HttpError(401, 'Invalid password');
   }
 
   const payload = {
@@ -47,19 +46,17 @@ const login = async (req, res) => {
   res.json({
     token,
     user: {
-      name: user.name,
       email: user.email,
+      subscription: user.subscription,
     },
   });
 };
 
 const getCurrent = async (req, res) => {
-  const { name, subscription } = req.user;
+  const { email, subscription } = req.user;
   res.json({
-    user: {
-      name,
-      subscription,
-    },
+    email,
+    subscription,
   });
 };
 

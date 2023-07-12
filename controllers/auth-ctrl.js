@@ -17,8 +17,10 @@ const register = async (req, res) => {
   const result = await User.create({ ...req.body, password: hashPassword });
 
   res.status(201).json({
-    email: result.email,
-    subscription: result.subscription,
+    user: {
+      email: result.email,
+      subscription: result.subscription,
+    },
   });
 };
 
@@ -33,7 +35,7 @@ const login = async (req, res) => {
   const passwordCompare = await bcrypt.compare(password, user.password);
 
   if (!passwordCompare) {
-    throw HttpError(401, 'Invalid password');
+    throw HttpError(401, 'Email or password is wrong');
   }
 
   const payload = {
@@ -63,7 +65,7 @@ const getCurrent = async (req, res) => {
 const logout = async (req, res) => {
   const { _id } = req.user;
   await User.findByIdAndUpdate(_id, { token: '' });
-  res.json({
+  res.status(204).json({
     message: 'Logout successfully',
   });
 };

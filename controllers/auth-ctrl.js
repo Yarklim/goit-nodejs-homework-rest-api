@@ -7,6 +7,7 @@ const path = require('path');
 const gravatar = require('gravatar');
 const jimp = require('jimp');
 const { nanoid } = require('nanoid');
+const ElasticEmail = require('@elasticemail/elasticemail-client');
 
 require('dotenv').config();
 
@@ -33,13 +34,30 @@ const register = async (req, res) => {
     verificationToken,
   });
 
-  const verifyEmail = {
-    to: email,
-    subject: 'Verify email',
-    html: `<a target='_blank' href='${BASE_URL}/users/verify/${verificationToken}' >Click to verify your email</a>`,
-  };
+  //   const verifyEmail = {
+  //     to: email,
+  //     subject: 'Verify email',
+  //     html: `<a target='_blank' href='${BASE_URL}/users/verify/${verificationToken}' >Click to verify your email</a>`,
+  //   };
 
-  await sendEmail(verifyEmail);
+  const api = new ElasticEmail.EmailsApi();
+
+  const verifyEmail = ElasticEmail.EmailMessageData.constructFromObject({
+    Recipients: [new ElasticEmail.EmailRecipient(email)],
+    Content: {
+      Body: [
+        ElasticEmail.BodyPart.constructFromObject({
+          ContentType: 'HTML',
+          Content: `<a target='_blank' href='${BASE_URL}/users/verify/${verificationToken}' >Click to verify your email</a>`,
+        }),
+      ],
+      Subject: 'Verify email',
+      From: 'yarklim@gmail.com',
+    },
+  });
+
+  // await sendEmail(verifyEmail);
+  await api.emailsPost(verifyEmail, sendEmail);
 
   res.status(201).json({
     user: {
@@ -75,13 +93,24 @@ const resendVerifyEmail = async (req, res) => {
     throw HttpError(400, 'Verification has already been passed');
   }
 
-  const verifyEmail = {
-    to: email,
-    subject: 'Verify email',
-    html: `<a target='_blank' href='${BASE_URL}/users/verify/${user.verificationToken}' >Click to verify your email</a>`,
-  };
+  const api = new ElasticEmail.EmailsApi();
 
-  await sendEmail(verifyEmail);
+  const verifyEmail = ElasticEmail.EmailMessageData.constructFromObject({
+    Recipients: [new ElasticEmail.EmailRecipient(email)],
+    Content: {
+      Body: [
+        ElasticEmail.BodyPart.constructFromObject({
+          ContentType: 'HTML',
+          Content: `<a target='_blank' href='${BASE_URL}/users/verify/${user.verificationToken}' >Click to verify your email</a>`,
+        }),
+      ],
+      Subject: 'Verify email',
+      From: 'yarklim@gmail.com',
+    },
+  });
+
+  await api.emailsPost(verifyEmail, sendEmail);
+
   res.status(200).json({
     message: 'Verification email send',
   });
